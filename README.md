@@ -48,4 +48,7 @@ Use your service URL and the SSE path (often `/sse`):
 |------------------|----------|--------------------------------------|
 | `SERPAPI_KEY`    | Yes      | SerpAPI key                          |
 | `MCP_TRANSPORT`  | No       | Set to `sse` on Render; omit locally for stdio |
-| `PORT`           | No       | Set by Render                        |
+| `PORT`           | No       | Set by Render (bind port for SSE)    |
+| `FASTMCP_HOST`   | No       | Override bind host (default `0.0.0.0` when `MCP_TRANSPORT=sse`) |
+
+This project uses **`mcp.server.fastmcp.FastMCP`** (from the `mcp` package). Host and port are set on the constructor, not on `run()`; `PORT` from Render is mapped at import time.

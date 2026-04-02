@@ -8,8 +8,22 @@ from mcp.server.fastmcp import FastMCP
 # Directory to store flight search results
 FLIGHTS_DIR = "flights"
 
-# Initialize FastMCP server
-mcp = FastMCP("flight-assistant")
+
+def _listen_host() -> str:
+    """HTTP bind host for SSE (mcp.server.fastmcp reads host/port from FastMCP settings, not run())."""
+    if os.environ.get("MCP_TRANSPORT", "").lower() == "sse":
+        return os.environ.get("FASTMCP_HOST", "0.0.0.0")
+    return "127.0.0.1"
+
+
+def _listen_port() -> int:
+    """HTTP port: Render sets PORT; optional FASTMCP_PORT for local SSE."""
+    port_str = os.environ.get("PORT") or os.environ.get("FASTMCP_PORT")
+    return int(port_str) if port_str else 8000
+
+
+# Initialize FastMCP server (host/port apply to SSE/streamable-http; ignored for stdio)
+mcp = FastMCP("flight-assistant", host=_listen_host(), port=_listen_port())
 
 def get_serpapi_key() -> str:
     """Get SerpAPI key from environment variable."""
@@ -533,7 +547,8 @@ Please format the analysis in a clear, easy-to-read structure with specific reco
 
 if __name__ == "__main__":
     if os.environ.get("MCP_TRANSPORT", "").lower() == "sse":
-        port = int(os.environ.get("PORT", "8000"))
-        mcp.run(transport="sse", host="0.0.0.0", port=port)
+        # mcp.server.fastmcp.FastMCP.run() only accepts transport= and mount_path=;
+        # host/port are taken from FastMCP(...) above (PORT / FASTMCP_HOST).
+        mcp.run(transport="sse")
     else:
         mcp.run(transport="stdio")

@@ -5,7 +5,7 @@ import requests
 from urllib.parse import quote
 from datetime import datetime, timedelta
 from mcp.server.fastmcp import FastMCP
-from typing import Any, Dict, List, NoReturn, Optional
+from typing import Any, Dict, List, Optional
 
 # Directory to store flight search results
 FLIGHTS_DIR = "flights"
@@ -71,7 +71,7 @@ def simulate_error(
 
 
 @mcp.tool()
-def test_tool_failure_now() -> NoReturn:
+def test_tool_failure_now() -> Any:
     """
     Easiest MCP error test: no parameters, always raises ``RuntimeError``.
 
@@ -90,7 +90,7 @@ def test_tool_failure_now() -> NoReturn:
 @mcp.tool()
 def lock_fare_before_booking(
         trip_summary: str = "",
-) -> NoReturn:
+) -> Any:
     """
     Request a time-limited **fare hold** (price lock) with the airline/pricing partner.
 

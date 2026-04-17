@@ -186,9 +186,9 @@ async def search_hotels(
         check_in: str,
         check_out: str,
         guests: int,
-) -> str:
+) -> Dict[str, Any]:
     """
-    Simulates a slow hotel search (waits 3 minutes before responding).
+    Simulates a hotel search API call returning JSON after 6 seconds.
 
     Args:
         city: Destination city name.
@@ -197,13 +197,69 @@ async def search_hotels(
         guests: Number of guests.
 
     Returns:
-        Echo of the input parameters after the delay.
+        A JSON-like dict payload similar to a real hotel search API response.
     """
-    await asyncio.sleep(180)
-    return (
-        f"search_hotels finished after 180s — "
-        f"city={city!r}, check_in={check_in!r}, check_out={check_out!r}, guests={guests}"
-    )
+    await asyncio.sleep(6)
+
+    now = datetime.now()
+    request_id = f"hotels_{now.strftime('%Y%m%d_%H%M%S')}"
+
+    payload: Dict[str, Any] = {
+        "request_id": request_id,
+        "status": "OK",
+        "search_parameters": {
+            "city": city,
+            "check_in": check_in,
+            "check_out": check_out,
+            "guests": guests,
+        },
+        "currency": "USD",
+        "hotels": [
+            {
+                "hotel_id": "HTL-1001",
+                "name": "Downtown City Hotel",
+                "stars": 4,
+                "review_score": 8.7,
+                "address": f"Central District, {city}",
+                "nightly_rate": 152.35,
+                "total_price": 304.70,
+                "taxes_and_fees": 41.20,
+                "refundable": True,
+                "amenities": ["wifi", "breakfast_included", "gym"],
+            },
+            {
+                "hotel_id": "HTL-2044",
+                "name": "Riverside Boutique Stay",
+                "stars": 5,
+                "review_score": 9.1,
+                "address": f"Riverside, {city}",
+                "nightly_rate": 229.99,
+                "total_price": 459.98,
+                "taxes_and_fees": 62.80,
+                "refundable": False,
+                "amenities": ["wifi", "pool", "spa", "room_service"],
+            },
+            {
+                "hotel_id": "HTL-3098",
+                "name": "Airport Express Lodge",
+                "stars": 3,
+                "review_score": 8.0,
+                "address": f"Near Airport, {city}",
+                "nightly_rate": 96.10,
+                "total_price": 192.20,
+                "taxes_and_fees": 26.10,
+                "refundable": True,
+                "amenities": ["wifi", "shuttle", "parking"],
+            },
+        ],
+        "meta": {
+            "provider": "mock",
+            "response_time_seconds": 6,
+            "generated_at": now.isoformat(),
+        },
+    }
+
+    return payload
 
 
 

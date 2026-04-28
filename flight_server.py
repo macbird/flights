@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 from mcp.server.fastmcp import FastMCP
 from typing import Any, Dict, List, Optional
 
+from auth.basic_auth import wrap_app_with_optional_basic_auth
+from auth.bearer_jwt import wrap_app_with_optional_bearer_jwt_auth
+
 # Directory to store flight search results
 FLIGHTS_DIR = "flights"
 
@@ -26,6 +29,29 @@ def _listen_port() -> int:
 
 # Initialize FastMCP server (host/port apply to SSE/streamable-http; ignored for stdio)
 mcp = FastMCP("flight-assistant", host=_listen_host(), port=_listen_port())
+
+
+def _sse_app_with_optional_basic_auth() -> Any:
+    app = mcp.sse_app()
+    mode = os.environ.get("MCP_AUTH_MODE", "").strip().lower()
+    if mode in ("", "auto"):
+        app = wrap_app_with_optional_bearer_jwt_auth(app)
+        app = wrap_app_with_optional_basic_auth(app)
+        return app
+
+    if mode in ("none", "off", "disabled"):
+        return app
+
+    if mode in ("basic",):
+        return wrap_app_with_optional_basic_auth(app)
+
+    if mode in ("bearer", "bearer-jwt", "jwt", "oauth2"):
+        return wrap_app_with_optional_bearer_jwt_auth(app)
+
+    raise ValueError(
+        "Invalid MCP_AUTH_MODE. Use one of: auto, none, basic, oauth2"
+    )
+    return app
 
 
 def get_serpapi_key() -> str:
@@ -780,6 +806,13 @@ if __name__ == "__main__":
     if os.environ.get("MCP_TRANSPORT", "").lower() == "sse":
         # mcp.server.fastmcp.FastMCP.run() only accepts transport= and mount_path=;
         # host/port are taken from FastMCP(...) above (PORT / FASTMCP_HOST).
-        mcp.run(transport="sse")
+        import uvicorn
+
+        uvicorn.run(
+            _sse_app_with_optional_basic_auth(),
+            host=_listen_host(),
+            port=_listen_port(),
+            log_level="info",
+        )
     else:
         mcp.run(transport="stdio")

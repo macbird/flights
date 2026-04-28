@@ -26,6 +26,7 @@ python -m fastmcp run flight_server.py --transport sse --host 127.0.0.1 --port 8
    - **Build:** `pip install -r requirements.txt`
    - **Start:** `python flight_server.py`
    - **Environment:** `MCP_TRANSPORT=sse` (already in `render.yaml`), `SERPAPI_KEY` = your secret.
+   - **Optional Basic Auth (recommended if public):** set `MCP_BASIC_USER` and `MCP_BASIC_PASSWORD` as secrets.
 3. Render sets `PORT` automatically; the app listens with SSE on `0.0.0.0`.
 
 ### Cursor (`mcp.json`)
@@ -50,5 +51,11 @@ Use your service URL and the SSE path (often `/sse`):
 | `MCP_TRANSPORT`  | No       | Set to `sse` on Render; omit locally for stdio |
 | `PORT`           | No       | Set by Render (bind port for SSE)    |
 | `FASTMCP_HOST`   | No       | Override bind host (default `0.0.0.0` when `MCP_TRANSPORT=sse`) |
+| `MCP_BASIC_USER` | No       | Optional Basic Auth username for SSE |
+| `MCP_BASIC_PASSWORD` | No   | Optional Basic Auth password for SSE |
+| `MCP_OAUTH2_JWKS_URL` | No  | Optional OAuth2/JWT auth: JWKS URL (enables Bearer auth when set) |
+| `MCP_OAUTH2_ISSUER` | No    | Optional OAuth2/JWT auth: expected `iss` claim |
+| `MCP_OAUTH2_AUDIENCE` | No  | Optional OAuth2/JWT auth: expected `aud` claim |
+| `MCP_AUTH_MODE` | No       | Auth mode for SSE: `auto` (default), `none`, `basic`, `oauth2` (alias: `bearer-jwt`) |
 
 This project uses **`mcp.server.fastmcp.FastMCP`** (from the `mcp` package). Host and port are set on the constructor, not on `run()`; `PORT` from Render is mapped at import time.

@@ -11,3 +11,9 @@ services:
         value: sse
       - key: SERPAPI_KEY
         sync: false
+      - key: MCP_AUTH_MODE
+        value: auto
+      - key: MCP_BASIC_USER
+        sync: false
+      - key: MCP_BASIC_PASSWORD
+        sync: false

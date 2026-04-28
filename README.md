@@ -57,5 +57,6 @@ Use your service URL and the SSE path (often `/sse`):
 | `MCP_OAUTH2_ISSUER` | No    | Optional OAuth2/JWT auth: expected `iss` claim |
 | `MCP_OAUTH2_AUDIENCE` | No  | Optional OAuth2/JWT auth: expected `aud` claim |
 | `MCP_AUTH_MODE` | No       | Auth mode for SSE: `auto` (default), `none`, `basic`, `oauth2` (alias: `bearer-jwt`) |
+| `MCP_AUTH_DEBUG` | No      | When `true`, logs authentication failures (never logs tokens/passwords) |
 
 This project uses **`mcp.server.fastmcp.FastMCP`** (from the `mcp` package). Host and port are set on the constructor, not on `run()`; `PORT` from Render is mapped at import time.

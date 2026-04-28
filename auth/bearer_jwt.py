@@ -1,9 +1,7 @@
-import json
 import os
-import time
-import urllib.request
+import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import jwt
 from jwt import PyJWKClient
@@ -17,6 +15,7 @@ class JwtAuthConfig:
     jwks_url: str
     issuer: Optional[str]
     audience: Optional[str]
+    debug: bool
 
 
 def jwt_auth_config_from_env() -> Optional[JwtAuthConfig]:
@@ -25,7 +24,18 @@ def jwt_auth_config_from_env() -> Optional[JwtAuthConfig]:
         return None
     issuer = os.environ.get("MCP_OAUTH2_ISSUER")
     audience = os.environ.get("MCP_OAUTH2_AUDIENCE")
-    return JwtAuthConfig(jwks_url=jwks_url, issuer=issuer, audience=audience)
+    debug = os.environ.get("MCP_AUTH_DEBUG", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+    return JwtAuthConfig(
+        jwks_url=jwks_url,
+        issuer=issuer,
+        audience=audience,
+        debug=debug,
+    )
 
 
 class BearerJwtAuthMiddleware(BaseHTTPMiddleware):
@@ -33,14 +43,28 @@ class BearerJwtAuthMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._config = config
         self._jwk_client = PyJWKClient(config.jwks_url)
+        self._logger = logging.getLogger("mcp.auth.bearer_jwt")
 
     async def dispatch(self, request: Request, call_next) -> Response:
         auth = request.headers.get("authorization")
         if not auth:
+            if self._config.debug:
+                self._logger.warning(
+                    "401: Missing Authorization header (path=%s method=%s)",
+                    request.url.path,
+                    request.method,
+                )
             return Response(status_code=401, headers={"WWW-Authenticate": "Bearer"})
 
         scheme, _, value = auth.partition(" ")
         if scheme.lower() != "bearer" or not value:
+            if self._config.debug:
+                self._logger.warning(
+                    "401: Invalid Authorization scheme (got=%s path=%s method=%s)",
+                    scheme,
+                    request.url.path,
+                    request.method,
+                )
             return Response(status_code=401, headers={"WWW-Authenticate": "Bearer"})
 
         token = value.strip()
@@ -62,7 +86,18 @@ class BearerJwtAuthMiddleware(BaseHTTPMiddleware):
                 audience=self._config.audience,
                 options=options,
             )
-        except Exception:
+        except Exception as exc:
+            if self._config.debug:
+                self._logger.warning(
+                    "401: Bearer token rejected (path=%s method=%s jwks_url=%s issuer=%s audience=%s error=%s: %s)",
+                    request.url.path,
+                    request.method,
+                    self._config.jwks_url,
+                    self._config.issuer,
+                    self._config.audience,
+                    exc.__class__.__name__,
+                    str(exc)[:200],
+                )
             return Response(status_code=401, headers={"WWW-Authenticate": "Bearer"})
 
         return await call_next(request)

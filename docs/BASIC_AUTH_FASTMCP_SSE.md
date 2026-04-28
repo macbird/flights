@@ -18,6 +18,9 @@ Você pode controlar o mecanismo de autenticação via `MCP_AUTH_MODE`:
 - `basic`: força Basic
 - `oauth2`: força Bearer/JWT (útil para OAuth2 na prática; alias: `bearer-jwt`)
 
+> Importante: ao usar `MCP_AUTH_MODE=oauth2`, você **precisa** definir `MCP_OAUTH2_JWKS_URL`.
+> Caso contrário, o servidor deve falhar ao iniciar (para evitar ficar exposto sem autenticação por engano).
+
 ## Pré-requisitos
 
 - Python 3.10+ (recomendado)

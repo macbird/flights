@@ -46,6 +46,10 @@ def _sse_app_with_optional_basic_auth() -> Any:
         return wrap_app_with_optional_basic_auth(app)
 
     if mode in ("bearer", "bearer-jwt", "jwt", "oauth2"):
+        if not os.environ.get("MCP_OAUTH2_JWKS_URL"):
+            raise ValueError(
+                "MCP_AUTH_MODE=oauth2 requires MCP_OAUTH2_JWKS_URL to be set."
+            )
         return wrap_app_with_optional_bearer_jwt_auth(app)
 
     raise ValueError(

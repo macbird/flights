@@ -1,5 +1,6 @@
 import base64
 import os
+import logging
 from typing import Any, Optional, Tuple
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -12,23 +13,55 @@ class BasicAuthMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self._username = username
         self._password = password
+        self._debug = os.environ.get("MCP_AUTH_DEBUG", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
+        self._logger = logging.getLogger("mcp.auth.basic")
 
     async def dispatch(self, request: Request, call_next) -> Response:
         auth = request.headers.get("authorization")
         if not auth:
+            if self._debug:
+                self._logger.warning(
+                    "401: Missing Authorization header (path=%s method=%s)",
+                    request.url.path,
+                    request.method,
+                )
             return Response(status_code=401, headers={"WWW-Authenticate": "Basic"})
 
         scheme, _, value = auth.partition(" ")
         if scheme.lower() != "basic" or not value:
+            if self._debug:
+                self._logger.warning(
+                    "401: Invalid Authorization scheme (got=%s path=%s method=%s)",
+                    scheme,
+                    request.url.path,
+                    request.method,
+                )
             return Response(status_code=401, headers={"WWW-Authenticate": "Basic"})
 
         try:
             decoded = base64.b64decode(value).decode("utf-8")
         except (ValueError, UnicodeDecodeError):
+            if self._debug:
+                self._logger.warning(
+                    "401: Invalid Basic credentials encoding (path=%s method=%s)",
+                    request.url.path,
+                    request.method,
+                )
             return Response(status_code=401, headers={"WWW-Authenticate": "Basic"})
 
         expected = f"{self._username}:{self._password}"
         if decoded != expected:
+            if self._debug:
+                self._logger.warning(
+                    "401: Basic credentials rejected (path=%s method=%s)",
+                    request.url.path,
+                    request.method,
+                )
             return Response(status_code=401, headers={"WWW-Authenticate": "Basic"})
 
         return await call_next(request)

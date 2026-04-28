@@ -7,6 +7,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from auth.bearer_jwt import auth_exempt_paths_from_env
+
 
 class BasicAuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: Any, username: str, password: str) -> None:
@@ -20,8 +22,12 @@ class BasicAuthMiddleware(BaseHTTPMiddleware):
             "on",
         )
         self._logger = logging.getLogger("mcp.auth.basic")
+        self._exempt_paths = auth_exempt_paths_from_env()
 
     async def dispatch(self, request: Request, call_next) -> Response:
+        if request.url.path in self._exempt_paths:
+            return await call_next(request)
+
         auth = request.headers.get("authorization")
         if not auth:
             if self._debug:

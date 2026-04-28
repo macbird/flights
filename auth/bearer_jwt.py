@@ -38,14 +38,25 @@ def jwt_auth_config_from_env() -> Optional[JwtAuthConfig]:
     )
 
 
+def auth_exempt_paths_from_env() -> set[str]:
+    raw = os.environ.get("MCP_AUTH_EXEMPT_PATHS", "").strip()
+    if not raw:
+        return {"/", "/health", "/favicon.ico"}
+    return {p.strip() for p in raw.split(",") if p.strip()}
+
+
 class BearerJwtAuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: Any, config: JwtAuthConfig) -> None:
         super().__init__(app)
         self._config = config
         self._jwk_client = PyJWKClient(config.jwks_url)
         self._logger = logging.getLogger("mcp.auth.bearer_jwt")
+        self._exempt_paths = auth_exempt_paths_from_env()
 
     async def dispatch(self, request: Request, call_next) -> Response:
+        if request.url.path in self._exempt_paths:
+            return await call_next(request)
+
         auth = request.headers.get("authorization")
         if not auth:
             if self._config.debug:
@@ -69,6 +80,28 @@ class BearerJwtAuthMiddleware(BaseHTTPMiddleware):
 
         token = value.strip()
         try:
+            if self._config.debug:
+                try:
+                    header = jwt.get_unverified_header(token)
+                    unverified = jwt.decode(token, options={"verify_signature": False})
+                    self._logger.info(
+                        "Bearer token received (path=%s method=%s alg=%s kid=%s iss=%s aud=%s)",
+                        request.url.path,
+                        request.method,
+                        header.get("alg"),
+                        header.get("kid"),
+                        unverified.get("iss"),
+                        unverified.get("aud"),
+                    )
+                except Exception as exc:
+                    self._logger.warning(
+                        "Failed to introspect token header/payload (path=%s method=%s error=%s: %s)",
+                        request.url.path,
+                        request.method,
+                        exc.__class__.__name__,
+                        str(exc)[:200],
+                    )
+
             signing_key = self._jwk_client.get_signing_key_from_jwt(token).key
 
             options = {

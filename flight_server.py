@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 from typing import Any, Dict, List, Optional
 
 from auth.basic_auth import wrap_app_with_optional_basic_auth
@@ -15,8 +15,8 @@ FLIGHTS_DIR = "flights"
 
 
 def _listen_host() -> str:
-    """HTTP bind host for SSE (mcp.server.fastmcp reads host/port from FastMCP settings, not run())."""
-    if os.environ.get("MCP_TRANSPORT", "").lower() == "sse":
+    """HTTP bind host for HTTP-based transports (SSE/streamable-http/http)."""
+    if os.environ.get("MCP_TRANSPORT", "").strip().lower() in ("sse", "streamable-http", "http"):
         return os.environ.get("FASTMCP_HOST", "0.0.0.0")
     return "127.0.0.1"
 
@@ -27,12 +27,15 @@ def _listen_port() -> int:
     return int(port_str) if port_str else 8000
 
 
-# Initialize FastMCP server (host/port apply to SSE/streamable-http; ignored for stdio)
-mcp = FastMCP("flight-assistant", host=_listen_host(), port=_listen_port())
+# Initialize FastMCP server (host/port are provided by the HTTP runner, not the constructor)
+mcp = FastMCP("flight-assistant")
 
 
-def _sse_app_with_optional_basic_auth() -> Any:
-    app = mcp.sse_app()
+def _http_app_with_optional_auth() -> Any:
+    app = mcp.http_app(transport="streamable-http")
+    sse_app = mcp.http_app(transport="sse")
+    app.router.routes.extend(sse_app.router.routes)
+
     mode = os.environ.get("MCP_AUTH_MODE", "").strip().lower()
     if mode in ("", "auto"):
         app = wrap_app_with_optional_bearer_jwt_auth(app)
@@ -87,13 +90,11 @@ register_prompts(mcp)
 
 
 if __name__ == "__main__":
-    if os.environ.get("MCP_TRANSPORT", "").lower() == "sse":
-        # mcp.server.fastmcp.FastMCP.run() only accepts transport= and mount_path=;
-        # host/port are taken from FastMCP(...) above (PORT / FASTMCP_HOST).
+    if os.environ.get("MCP_TRANSPORT", "").strip().lower() in ("sse", "streamable-http", "http"):
         import uvicorn
 
         uvicorn.run(
-            _sse_app_with_optional_basic_auth(),
+            _http_app_with_optional_auth(),
             host=_listen_host(),
             port=_listen_port(),
             log_level="info",

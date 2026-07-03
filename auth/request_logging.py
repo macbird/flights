@@ -21,8 +21,19 @@ def _is_truthy_env(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
 
 
-def request_logging_enabled_from_env() -> bool:
-    return _is_truthy_env("MCP_REQUEST_LOG")
+def configure_request_logging() -> None:
+    """Attach a stream handler so request logs appear in Render/uvicorn output."""
+    logger = logging.getLogger("mcp.request")
+    logger.setLevel(logging.INFO)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(
+            logging.Formatter("%(levelname)s:     [mcp.request] %(message)s")
+        )
+        logger.addHandler(handler)
+    logger.propagate = False
+
+    logging.getLogger("uvicorn.error").info("MCP request logging enabled")
 
 
 def _mask_header_value(name: str, value: str, log_sensitive: bool) -> str:
@@ -86,8 +97,6 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def wrap_app_with_optional_request_logging(app: Any) -> Any:
-    if not request_logging_enabled_from_env():
-        return app
+def wrap_app_with_request_logging(app: Any) -> Any:
     app.add_middleware(RequestLoggingMiddleware)
     return app

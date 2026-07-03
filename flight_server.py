@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from auth.basic_auth import wrap_app_with_optional_basic_auth
 from auth.bearer_jwt import wrap_app_with_optional_bearer_jwt_auth
-from auth.request_logging import wrap_app_with_optional_request_logging
+from auth.request_logging import configure_request_logging, wrap_app_with_request_logging
 from tools.external_tools import register_external_tools
 from tools.core_tools import register_core_tools
 from tools.resources import register_resources
@@ -56,7 +56,7 @@ def _http_app_with_optional_auth() -> Any:
             "Invalid MCP_AUTH_MODE. Use one of: auto, none, basic, oauth2"
         )
 
-    return wrap_app_with_optional_request_logging(app)
+    return wrap_app_with_request_logging(app)
 
 
 def get_serpapi_key() -> str:
@@ -91,6 +91,7 @@ if __name__ == "__main__":
     if os.environ.get("MCP_TRANSPORT", "").strip().lower() in ("sse", "streamable-http", "http"):
         import uvicorn
 
+        configure_request_logging()
         uvicorn.run(
             _http_app_with_optional_auth(),
             host=_listen_host(),

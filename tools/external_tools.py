@@ -14,7 +14,7 @@ def register_external_tools(
     normalize_location_id: Callable[[str], str],
     flights_dir: str,
 ) -> None:
-    @mcp.tool()
+    # @mcp.tool()
     def lock_fare_before_booking(
         trip_summary: str = "",
     ) -> Any:
@@ -57,7 +57,7 @@ def register_external_tools(
             response=response,
         )
 
-    @mcp.tool()
+    # @mcp.tool()
     def fetch_partner_inventory_snapshot(
         airline_iata: str,
         origin_iata: str,
@@ -105,7 +105,7 @@ def register_external_tools(
             response=response,
         )
 
-    @mcp.tool()
+    # @mcp.tool()
     def search_flights(
         departure_id: str,
         arrival_id: str,

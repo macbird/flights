@@ -12,8 +12,10 @@ services:
       - key: SERPAPI_KEY
         sync: false
       - key: MCP_AUTH_MODE
-        value: auto
-      - key: MCP_BASIC_USER
-        sync: false
-      - key: MCP_BASIC_PASSWORD
-        sync: false
+        value: oauth2
+      - key: MCP_OAUTH2_JWKS_URL
+        value: https://keycloak-dev-admin.eva.bot/auth/realms/eva.bot/protocol/openid-connect/certs
+      - key: MCP_OAUTH2_ISSUER
+        value: https://keycloak-dev-admin.eva.bot/auth/realms/eva.bot
+      - key: MCP_OAUTH2_AUDIENCE
+        value: account

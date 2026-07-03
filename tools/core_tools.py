@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 
 def register_core_tools(mcp: Any, *, flights_dir: str) -> None:
-    @mcp.tool()
+    # @mcp.tool()
     def simulate_error(
         message: str = "Simulated tool error for testing.",
         error_code: str = "SIMULATED_ERROR",
@@ -31,7 +31,7 @@ def register_core_tools(mcp: Any, *, flights_dir: str) -> None:
             raise RuntimeError(message)
         return {"error": message, "error_code": error_code}
 
-    @mcp.tool()
+    # @mcp.tool()
     def test_tool_failure_now() -> Any:
         """
         Easiest MCP error test: no parameters, always raises ``RuntimeError``.
@@ -47,7 +47,7 @@ def register_core_tools(mcp: Any, *, flights_dir: str) -> None:
             "Simulated failure: reservations API unavailable (retry in a few minutes)."
         )
 
-    @mcp.tool()
+    # @mcp.tool()
     async def search_hotels(
         city: str,
         check_in: str,
@@ -128,7 +128,7 @@ def register_core_tools(mcp: Any, *, flights_dir: str) -> None:
 
         return payload
 
-    @mcp.tool()
+    # @mcp.tool()
     def get_flight_details(search_id: str) -> str:
         """
         Get detailed information about a specific flight search.
@@ -151,7 +151,7 @@ def register_core_tools(mcp: Any, *, flights_dir: str) -> None:
         except (FileNotFoundError, json.JSONDecodeError) as e:
             return f"Error reading flight data for {search_id}: {str(e)}"
 
-    @mcp.tool()
+    # @mcp.tool()
     def filter_flights_by_price(
         search_id: str,
         max_price: Optional[float] = None,
@@ -205,7 +205,7 @@ def register_core_tools(mcp: Any, *, flights_dir: str) -> None:
         except (FileNotFoundError, json.JSONDecodeError) as e:
             return f"Error processing flight data for {search_id}: {str(e)}"
 
-    @mcp.tool()
+    # @mcp.tool()
     def filter_flights_by_airline(search_id: str, airlines: List[str]) -> str:
         """
         Filter flights from a search by specific airlines.
